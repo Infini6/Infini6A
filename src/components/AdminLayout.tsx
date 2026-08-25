@@ -47,7 +47,7 @@ export function AdminLayout() {
       <aside className={`sidebar ${isCollapsed ? 'is-collapsed' : ''} ${isMobileOpen ? 'is-open' : ''}`}>
         <div className="brand-lockup">
           <div className="brand-mark" aria-hidden="true"><Activity size={20} /></div>
-          <span className="brand-name">Care<span>Grid</span></span>
+          <span className="brand-name">Smart <span>Hospital</span></span>
           <button className="icon-button close-mobile" type="button" onClick={() => setIsMobileOpen(false)} aria-label="Close navigation">
             <X size={18} />
           </button>
@@ -75,7 +75,7 @@ export function AdminLayout() {
           </button>
           <NavLink className="profile-card" to="/settings">
             <div className="avatar avatar-small">SA</div>
-            <div className="profile-copy"><strong>Sam Anderson</strong><span>Platform owner</span></div>
+            <div className="profile-copy"><strong>Platform Admin</strong><span>Platform operations</span></div>
             <LogOut size={16} />
           </NavLink>
         </div>
@@ -88,7 +88,7 @@ export function AdminLayout() {
           </div>
           <div className="topbar-actions">
             <span className="system-status"><span className="status-dot" />All systems operational</span>
-            <div className="avatar">SA</div>
+            <div className="avatar">PA</div>
           </div>
         </header>
         <main className="page-content"><Outlet /></main>
