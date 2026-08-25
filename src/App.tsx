@@ -13,6 +13,7 @@ import { AdminLayout } from './components/AdminLayout'
 import { dashboardMetrics, hospitalPerformance, operationalAlerts, queueOverview } from './data/dashboardData'
 import { LoginPage } from './pages/LoginPage'
 import { HospitalsPage } from './pages/HospitalsPage'
+import { HospitalAdminsPage } from './pages/HospitalAdminsPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import './App.css'
 
@@ -47,6 +48,7 @@ function App() {
         <Route element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="hospitals" element={<HospitalsPage />} />
+          <Route path="hospital-admins" element={<HospitalAdminsPage />} />
           {pageData.map(([path, title, description, icon]) => <Route key={path} path={path} element={<PlaceholderPage title={title} description={description} icon={icon} />} />)}
         </Route>
       </Routes>
