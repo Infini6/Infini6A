@@ -19,6 +19,7 @@ import { AnalyticsPage } from './pages/AnalyticsPage'
 import { AuditLogsPage } from './pages/AuditLogsPage'
 import { DoctorsPage } from './pages/DoctorsPage'
 import { PatientsPage } from './pages/PatientsPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import './App.css'
 
@@ -59,6 +60,7 @@ function App() {
           <Route path="audit-logs" element={<AuditLogsPage />} />
           <Route path="doctors" element={<DoctorsPage />} />
           <Route path="patients" element={<PatientsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
           {pageData.map(([path, title, description, icon]) => <Route key={path} path={path} element={<PlaceholderPage title={title} description={description} icon={icon} />} />)}
         </Route>
       </Routes>
