@@ -3,7 +3,6 @@ import {
   Activity,
   AlertTriangle,
   BarChart3,
-  Building2,
   ClipboardList,
   Settings,
   Stethoscope,
@@ -13,11 +12,11 @@ import {
 import { AdminLayout } from './components/AdminLayout'
 import { dashboardMetrics, hospitalPerformance, operationalAlerts, queueOverview } from './data/dashboardData'
 import { LoginPage } from './pages/LoginPage'
+import { HospitalsPage } from './pages/HospitalsPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import './App.css'
 
 const pageData = [
-  ['hospitals', 'Hospitals', 'Manage the connected hospital network.', Building2],
   ['hospital-admins', 'Hospital Admins', 'Oversee administrative access across the network.', UserCog],
   ['doctors', 'Doctors', 'View and manage clinical staff across hospitals.', Stethoscope],
   ['patients', 'Patients', 'A unified view of patients moving through care.', Users],
@@ -47,6 +46,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="hospitals" element={<HospitalsPage />} />
           {pageData.map(([path, title, description, icon]) => <Route key={path} path={path} element={<PlaceholderPage title={title} description={description} icon={icon} />} />)}
         </Route>
       </Routes>
