@@ -14,6 +14,7 @@ import { dashboardMetrics, hospitalPerformance, operationalAlerts, queueOverview
 import { LoginPage } from './pages/LoginPage'
 import { HospitalsPage } from './pages/HospitalsPage'
 import { HospitalAdminsPage } from './pages/HospitalAdminsPage'
+import { LiveMonitorPage } from './pages/LiveMonitorPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import './App.css'
 
@@ -49,6 +50,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="hospitals" element={<HospitalsPage />} />
           <Route path="hospital-admins" element={<HospitalAdminsPage />} />
+          <Route path="live-monitor" element={<LiveMonitorPage />} />
           {pageData.map(([path, title, description, icon]) => <Route key={path} path={path} element={<PlaceholderPage title={title} description={description} icon={icon} />} />)}
         </Route>
       </Routes>
