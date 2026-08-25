@@ -1,4 +1,4 @@
-import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
 import {
   Activity,
   AlertTriangle,
@@ -10,6 +10,8 @@ import {
   Users,
 } from 'lucide-react'
 import { AdminLayout } from './components/AdminLayout'
+import { AuthProvider } from './auth/AuthContext'
+import { useAuth } from './auth/useAuth'
 import { dashboardMetrics, hospitalPerformance, operationalAlerts, queueOverview } from './data/dashboardData'
 import { LoginPage } from './pages/LoginPage'
 import { HospitalsPage } from './pages/HospitalsPage'
@@ -50,9 +52,10 @@ function Dashboard() {
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route element={<AdminLayout />}>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginGate />} />
+          <Route element={<ProtectedAdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="hospitals" element={<HospitalsPage />} />
           <Route path="hospital-admins" element={<HospitalAdminsPage />} />
@@ -64,10 +67,21 @@ function App() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="alerts" element={<AlertsPage />} />
           {pageData.map(([path, title, description, icon]) => <Route key={path} path={path} element={<PlaceholderPage title={title} description={description} icon={icon} />} />)}
-        </Route>
-      </Routes>
+          </Route>
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   )
+}
+
+function LoginGate() {
+  const { isAuthenticated } = useAuth()
+  return isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />
+}
+
+function ProtectedAdminLayout() {
+  const { isAuthenticated } = useAuth()
+  return isAuthenticated ? <AdminLayout /> : <Navigate to="/login" replace />
 }
 
 export default App

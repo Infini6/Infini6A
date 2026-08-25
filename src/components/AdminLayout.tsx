@@ -9,7 +9,6 @@ import {
   ChevronRight,
   ClipboardList,
   LayoutDashboard,
-  LogOut,
   Menu,
   Settings,
   Stethoscope,
@@ -17,6 +16,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import { ProfileMenu } from './ProfileMenu'
 
 const navigation = [
   { label: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -73,11 +73,7 @@ export function AdminLayout() {
             {isCollapsed ? <ChevronRight size={17} /> : <ChevronLeft size={17} />}
             <span>{isCollapsed ? 'Expand menu' : 'Collapse menu'}</span>
           </button>
-          <NavLink className="profile-card" to="/settings">
-            <div className="avatar avatar-small">SA</div>
-            <div className="profile-copy"><strong>Platform Admin</strong><span>Platform operations</span></div>
-            <LogOut size={16} />
-          </NavLink>
+          <ProfileMenu compact />
         </div>
       </aside>
       <div className="main-area">
@@ -88,7 +84,7 @@ export function AdminLayout() {
           </div>
           <div className="topbar-actions">
             <span className="system-status"><span className="status-dot" />All systems operational</span>
-            <div className="avatar">PA</div>
+            <ProfileMenu />
           </div>
         </header>
         <main className="page-content"><Outlet /></main>
