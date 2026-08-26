@@ -1,0 +1,212 @@
+.admin-app {
+  background: var(--surface);
+}
+
+.sidebar {
+  background: #fbfdff;
+  border-right-color: var(--line);
+  box-shadow: 4px 0 18px rgba(20, 46, 79, .025);
+}
+
+.brand-lockup {
+  height: 78px;
+  padding: 0 20px;
+}
+
+.brand-mark {
+  border-radius: var(--radius-sm);
+  background: var(--blue);
+  box-shadow: 0 5px 13px rgba(37, 99, 201, .2);
+}
+
+.brand-name, .login-brand > span, .mobile-login-brand > span,
+.topbar h1, .welcome-row h2, .page-heading h2, .section-title h3,
+.card-heading h3, .placeholder-card h3, .login-form-wrap h2,
+.settings-card-heading h3, .settings-heading h2, .profile-details h4,
+.alerts-heading h2, .analytics-heading h2, .audit-heading h2,
+.doctors-heading h2, .patients-heading h2, .live-heading h2,
+.hospitals-heading h2, .admins-heading h2 {
+  font-family: Inter, ui-sans-serif, sans-serif;
+  letter-spacing: 0;
+}
+
+.workspace-label {
+  margin: 25px 20px 11px;
+  color: #8291a5;
+  font-size: 10px;
+}
+
+.main-nav { gap: 4px; padding: 0 10px; }
+.nav-item {
+  min-height: 44px;
+  gap: 12px;
+  border-radius: var(--radius-sm);
+  color: #607188;
+  font-size: 13px;
+  transition: color .16s ease, background-color .16s ease, transform .16s ease;
+}
+.nav-item:hover { color: var(--blue); background: #eef4fd; transform: translateX(1px); }
+.nav-item.active { color: var(--blue); background: #e8f0fc; box-shadow: inset 3px 0 0 var(--blue); }
+
+.sidebar-footer { padding: 14px 10px 17px; }
+.collapse-button { padding: 8px 12px 13px; }
+.profile-card:hover, .profile-trigger:hover { background: #eef4fd; }
+
+.main-area { background: var(--surface); }
+.topbar {
+  min-height: 78px;
+  padding: 0 38px;
+  background: rgba(255, 255, 255, .94);
+}
+.topbar h1 { font-size: 17px; font-weight: 700; }
+.topbar-actions { gap: 18px; }
+.system-status { color: #718198; font-size: 12px; }
+
+.page-content { padding: 34px 38px 58px; }
+.welcome-row { margin-bottom: 28px; }
+.welcome-row h2, .page-heading h2, .alerts-heading h2, .analytics-heading h2,
+.audit-heading h2, .doctors-heading h2, .patients-heading h2, .live-heading h2,
+.hospitals-heading h2, .admins-heading h2, .settings-heading h2 {
+  font-size: 29px;
+  line-height: 1.18;
+  font-weight: 700;
+}
+.eyebrow { color: var(--teal); font-size: 10px; letter-spacing: 1.1px; }
+.section-lead, .page-heading p, .alerts-heading p:not(.eyebrow),
+.analytics-heading p:not(.eyebrow), .settings-heading p:not(.eyebrow) {
+  color: #718198;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.primary-button, .outline-button, .text-button { border-radius: var(--radius-sm); font-weight: 600; transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease, transform .16s ease; }
+.primary-button { min-height: 40px; padding: 10px 15px; background: var(--blue); border-color: var(--blue); box-shadow: 0 4px 10px rgba(37, 99, 201, .16); }
+.primary-button:hover { background: var(--blue-dark); border-color: var(--blue-dark); box-shadow: 0 6px 14px rgba(37, 99, 201, .2); transform: translateY(-1px); }
+.outline-button { min-height: 39px; color: var(--blue); border-color: #cbd9eb; }
+.outline-button:hover { background: #f1f6fd; border-color: #a9c2e4; }
+.text-button { color: var(--blue); }
+.text-button:hover { color: var(--blue-dark); }
+
+.stat-grid { gap: 16px; margin-bottom: 25px; }
+.stat-card, .dashboard-card, .placeholder-card, .settings-card,
+.hospital-summary article, .alert-summary article {
+  border-color: var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.stat-card { min-height: 124px; gap: 10px; padding: 20px; }
+.stat-label { color: #718198; font-size: 12px; }
+.stat-card strong, .hospital-summary strong, .alert-summary strong { font-family: Inter, ui-sans-serif, sans-serif; font-size: 28px; letter-spacing: 0; }
+.stat-trend { font-size: 11px; }
+.dashboard-card { padding: 22px; }
+.card-heading h3, .section-title h3 { font-size: 15px; }
+.card-heading p, .section-title p { font-size: 12px; }
+
+.search-box, .alert-filter, .audit-filter, .date-filter, .input-wrap {
+  min-height: 40px;
+  border-color: #d4dfeb;
+  border-radius: var(--radius-sm);
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.search-box:focus-within, .input-wrap:focus-within, .alert-filter:focus-within,
+.audit-filter:focus-within, .date-filter:focus-within { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37, 99, 201, .12); }
+.search-box input, .input-wrap input, .alert-filter select, .audit-filter select { font-size: 12px; }
+.filter-group, .period-selector { background: #eaf0f7; border-radius: var(--radius-sm); }
+.filter-group button, .period-selector button { border-radius: 5px; font-size: 11px; }
+.filter-group button.selected, .period-selector button.selected { color: var(--blue); box-shadow: 0 2px 6px rgba(20, 46, 79, .1); }
+
+.performance-card, .hospital-table-card, .alert-table-card { box-shadow: var(--shadow-sm); }
+table { min-width: 920px; }
+th { padding: 13px 18px; color: #8291a5; font-size: 11px; letter-spacing: .35px; }
+td { padding: 15px 18px; color: #64748b; font-size: 12px; }
+tbody tr { transition: background-color .14s ease; }
+tbody tr:hover { background: #f8fbff; }
+.status-badge, .severity-badge, .alert-status, .coming-soon { border-radius: 999px; }
+
+.modal-backdrop { background: rgba(15, 32, 56, .48); backdrop-filter: blur(2px); }
+.hospital-modal { border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-md); }
+.modal-header { margin-bottom: 22px; }
+.modal-header h2 { font-family: Inter, ui-sans-serif, sans-serif; letter-spacing: 0; }
+
+.login-page { background: var(--surface); }
+.login-aside { background: linear-gradient(145deg, #185eb7, #087f79); }
+.login-message h1, .login-form-wrap h2 { font-family: Inter, ui-sans-serif, sans-serif; letter-spacing: 0; }
+.login-message h1 { font-weight: 800; }
+.login-panel { background: #fff; }
+.login-form-wrap form > label { font-size: 12px; }
+.input-wrap { height: 45px; }
+.login-button { min-height: 45px; }
+
+.admin-app { color: var(--text-primary); }
+.admin-app .brand-name,
+.admin-app .topbar h1,
+.admin-app .welcome-row h2,
+.admin-app .page-heading h2,
+.admin-app .section-title h3,
+.admin-app .card-heading h3,
+.admin-app .placeholder-card h3,
+.admin-app .settings-card-heading h3,
+.admin-app .settings-heading h2,
+.admin-app .alerts-heading h2,
+.admin-app .analytics-heading h2,
+.admin-app .audit-heading h2,
+.admin-app .doctors-heading h2,
+.admin-app .patients-heading h2,
+.admin-app .live-heading h2,
+.admin-app .hospitals-heading h2,
+.admin-app .admins-heading h2 { color: var(--text-primary); }
+.admin-app .section-title p,
+.admin-app .card-heading p,
+.admin-app .page-heading p,
+.admin-app .section-lead,
+.admin-app .alerts-heading p:not(.eyebrow),
+.admin-app .analytics-heading p:not(.eyebrow),
+.admin-app .settings-heading p:not(.eyebrow) { color: var(--text-secondary); }
+.admin-app .nav-item,
+.admin-app .collapse-button,
+.admin-app .profile-copy span,
+.admin-app .system-status { color: var(--text-secondary); }
+.admin-app .nav-item.active,
+.admin-app .nav-item:hover { color: var(--blue); }
+.admin-app .stat-label,
+.admin-app .queue-label,
+.admin-app .queue-total,
+.admin-app .profile-copy strong { color: var(--text-muted); }
+.admin-app .queue-label strong,
+.admin-app .queue-total strong,
+.admin-app td:first-child,
+.admin-app td strong { color: var(--text-strong); }
+.admin-app th { color: var(--text-secondary); }
+.admin-app td { color: #334155; }
+.admin-app .search-box input,
+.admin-app .input-wrap input,
+.admin-app select,
+.admin-app .hospital-filter { color: var(--text-primary); }
+.admin-app .outline-button { color: var(--text-strong); }
+.admin-app .chart-y-axis,
+.admin-app .chart-x-axis,
+.admin-app .chart-legend,
+.admin-app .chart-unit { color: var(--text-secondary); }
+
+/* Existing page styles use font shorthands; keep the rendered UI on the loaded Inter face. */
+:where(.admin-app, .login-page),
+:where(.admin-app, .login-page) * {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
+@media (max-width: 900px) {
+  .topbar { padding: 0 24px; }
+  .page-content { padding: 30px 24px 48px; }
+}
+
+@media (max-width: 620px) {
+  .topbar { min-height: 70px; padding: 0 17px; }
+  .page-content { padding: 25px 17px 40px; }
+  .welcome-row h2, .page-heading h2, .alerts-heading h2, .analytics-heading h2,
+  .audit-heading h2, .doctors-heading h2, .patients-heading h2, .live-heading h2,
+  .hospitals-heading h2, .admins-heading h2, .settings-heading h2 { font-size: 25px; }
+  .stat-card { min-height: 112px; padding: 16px; }
+  .stat-card strong, .hospital-summary strong, .alert-summary strong { font-size: 24px; }
+  .dashboard-card { padding: 18px; }
+  .primary-button { min-height: 42px; }
+}

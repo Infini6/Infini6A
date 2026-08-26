@@ -54,18 +54,20 @@ export function AdminLayout() {
         </div>
         <div className="workspace-label">PLATFORM ADMIN</div>
         <nav className="main-nav" aria-label="Primary navigation">
-          {navigation.map(({ label, path, icon: Icon }) => (
-            <NavLink
-              key={path}
-              to={path}
-              end={path === '/'}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-              onClick={() => setIsMobileOpen(false)}
-              title={isCollapsed ? label : undefined}
-            >
-              <Icon size={18} strokeWidth={1.9} />
-              <span>{label}</span>
-            </NavLink>
+          {navigation.map(({ label, path, icon: Icon }, index) => (
+            <div key={path} className="nav-group">
+              {(index === 5 || index === 9) && <div className="nav-section-label">{index === 5 ? 'OPERATIONS' : 'CONFIGURATION'}</div>}
+              <NavLink
+                to={path}
+                end={path === '/'}
+                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                onClick={() => setIsMobileOpen(false)}
+                title={isCollapsed ? label : undefined}
+              >
+                <Icon size={18} strokeWidth={1.9} />
+                <span>{label}</span>
+              </NavLink>
+            </div>
           ))}
         </nav>
         <div className="sidebar-footer">
