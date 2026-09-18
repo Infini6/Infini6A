@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Bell, Check, CheckCircle2, LockKeyhole, Mail, Monitor, Pencil, Phone, ShieldCheck, UserRound, X } from 'lucide-react'
 import './SettingsPage.css'
+import '../components/PortalPrimitives'
 
 type Profile = { name: string; email: string; phone: string }
 type Preferences = { highPriority: boolean; queueCongestion: boolean; doctorAvailability: boolean; systemWarnings: boolean }

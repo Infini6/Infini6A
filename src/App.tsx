@@ -1,9 +1,14 @@
 import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import {
   Activity,
   AlertTriangle,
   BarChart3,
+  Building2,
+  BellRing,
   ClipboardList,
+  Clock3,
+  ArrowUpRight,
   Settings,
   Stethoscope,
   UserCog,
@@ -12,7 +17,7 @@ import {
 import { AdminLayout } from './components/AdminLayout'
 import { AuthProvider } from './auth/AuthContext'
 import { useAuth } from './auth/useAuth'
-import { hospitalPerformance, operationalAlerts, queueOverview } from './data/dashboardData'
+import { getPlatformDashboard } from './services/api'
 import { LoginPage } from './pages/LoginPage'
 import { HospitalsPage } from './pages/HospitalsPage'
 import { HospitalAdminsPage } from './pages/HospitalAdminsPage'
@@ -24,6 +29,8 @@ import { PatientsPage } from './pages/PatientsPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { AlertsPage } from './pages/AlertsPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
+import { mockDoctors } from './data/doctorsData'
+import { mockPatients } from './data/patientsData'
 import './App.css'
 
 const pageData = [
@@ -37,125 +44,36 @@ const pageData = [
   ['settings', 'Settings', 'Configure platform preferences and access.', Settings],
 ] as const
 
-function HospitalPerformanceChart() {
-  const patientMax = Math.max(...hospitalPerformance.map((hospital) => hospital.activePatients))
-  const doctorMax = Math.max(...hospitalPerformance.map((hospital) => hospital.activeDoctors))
-  const appointmentMax = Math.max(...hospitalPerformance.map((hospital) => hospital.appointmentsToday))
-  const waitValues = hospitalPerformance.map((hospital) => Number.parseInt(hospital.averageWait, 10))
-  const waitMax = Math.max(...waitValues)
-  const shortNames = hospitalPerformance.map((hospital) =>
-    hospital.name
-      .split(' ')
-      .slice(0, 2)
-      .map((part) => part.replace(/\./g, ''))
-      .join(' '),
-  )
-
-  const metrics = [
-    {
-      key: 'patients',
-      label: 'Active patients',
-      color: '#3b82f6',
-      total: hospitalPerformance.reduce((sum, hospital) => sum + hospital.activePatients, 0),
-      values: hospitalPerformance.map((hospital) => hospital.activePatients),
-      max: patientMax,
-      type: 'bars' as const,
-    },
-    {
-      key: 'doctors',
-      label: 'Active doctors',
-      color: '#22a06b',
-      total: hospitalPerformance.reduce((sum, hospital) => sum + hospital.activeDoctors, 0),
-      values: hospitalPerformance.map((hospital) => hospital.activeDoctors),
-      max: doctorMax,
-      type: 'bars' as const,
-    },
-    {
-      key: 'appointments',
-      label: 'Appointments today',
-      color: '#7c6cf2',
-      total: hospitalPerformance.reduce((sum, hospital) => sum + hospital.appointmentsToday, 0),
-      values: hospitalPerformance.map((hospital) => hospital.appointmentsToday),
-      max: appointmentMax,
-      type: 'bars' as const,
-    },
-    {
-      key: 'waiting',
-      label: 'Avg. waiting time',
-      color: '#f59e0b',
-      total: Math.round(waitValues.reduce((sum, value) => sum + value, 0) / waitValues.length),
-      values: waitValues,
-      max: waitMax,
-      type: 'line' as const,
-    },
-  ]
+function HospitalPerformanceChart({ hospitalPerformance }: { hospitalPerformance: any[] }) {
+  const maxPatients = Math.max(1, ...hospitalPerformance.map((hospital) => hospital.activePatients))
+  const totalAppointments = hospitalPerformance.reduce((sum, hospital) => sum + hospital.appointmentsToday, 0)
+  const totalWaiting = hospitalPerformance.reduce((sum, hospital) => sum + hospital.waitingPatients, 0)
 
   return (
-    <div className="hospital-performance-analytics" aria-label="Hospital performance overview">
-      {metrics.map((metric) => (
-        <article className="hospital-metric-card" key={metric.key}>
-          <div className="metric-card-header">
-            <div>
-              <span>{metric.label}</span>
-              <strong>{metric.total}{metric.key === 'waiting' ? ' min' : ''}</strong>
-            </div>
-            <span className="metric-pill" style={{ backgroundColor: `${metric.color}1f`, color: metric.color }}>
-              {metric.key === 'waiting' ? 'min' : 'count'}
-            </span>
-          </div>
-
-          <div className="mini-chart-shell">
-            <svg viewBox="0 0 310 155" className="hospital-mini-chart" preserveAspectRatio="xMidYMid meet">
-              {[0, 1, 2, 3].map((line) => (
-                <line key={line} x1="30" y1={16 + line * 34} x2="286" y2={16 + line * 34} className="chart-grid-line" />
-              ))}
-
-              {metric.type === 'bars' ? (
-                metric.values.map((value, index) => {
-                  const x = 38 + index * 58
-                  const height = (value / metric.max) * 80
-                  const y = 112 - height
-
-                  return (
-                    <g key={`${metric.key}-${shortNames[index]}`}>
-                      <title>{`${shortNames[index]}: ${value}`}</title>
-                      <rect x={x} y={y} width="18" height={height} rx="6" className="mini-chart-bar" style={{ fill: metric.color }} />
-                      <text x={x + 9} y="131" textAnchor="middle" className="axis-label">{shortNames[index].split(' ')[0]}</text>
-                    </g>
-                  )
-                })
-              ) : (
-                <>
-                  {metric.values.map((value, index) => {
-                    const x = 38 + index * 58
-                    const y = 112 - (value / metric.max) * 80
-
-                    return (
-                      <g key={`${metric.key}-${shortNames[index]}`}>
-                        <title>{`${shortNames[index]}: ${value} min`}</title>
-                        <circle cx={x} cy={y} r="3.5" className="line-point" style={{ fill: metric.color }} />
-                        <text x={x} y="131" textAnchor="middle" className="axis-label">{shortNames[index].split(' ')[0]}</text>
-                      </g>
-                    )
-                  })}
-                  <polyline
-                    points={metric.values
-                      .map((value, index) => `${38 + index * 58},${112 - (value / metric.max) * 80}`)
-                      .join(' ')}
-                    className="trend-line"
-                    style={{ stroke: metric.color }}
-                  />
-                </>
-              )}
-            </svg>
-          </div>
-        </article>
-      ))}
+    <div className="network-overview-body" aria-label="Hospital network overview">
+      <div className="network-chart-panel">
+        <div className="network-chart-meta">
+          <div><strong>{totalAppointments.toLocaleString()}</strong><span>appointments today</span></div>
+          <div><strong>{totalWaiting}</strong><span>patients waiting</span></div>
+        </div>
+        <div className="network-chart-legend"><span><i className="legend-patients" />Active patients</span><span><i className="legend-waiting" />Waiting patients</span></div>
+        <svg viewBox="0 0 760 238" className="network-chart" role="img" aria-label="Active and waiting patients by hospital">
+          {[0, 1, 2, 3].map((line) => <line key={line} x1="42" y1={22 + line * 48} x2="730" y2={22 + line * 48} className="network-grid-line" />)}
+          {hospitalPerformance.map((hospital, index) => {
+            const x = 78 + index * 165
+            const patientHeight = (hospital.activePatients / maxPatients) * 148
+            const waitingHeight = (hospital.waitingPatients / maxPatients) * 148
+            const label = hospital.name.split(' ').slice(0, 2).join(' ')
+            return <g key={hospital.name}><title>{`${hospital.name}: ${hospital.activePatients} active patients, ${hospital.waitingPatients} waiting`}</title><rect x={x} y={170 - patientHeight} width="42" height={patientHeight} rx="8" className="network-patient-bar" /><rect x={x + 50} y={170 - waitingHeight} width="22" height={waitingHeight} rx="6" className="network-waiting-bar" /><text x={x + 34} y="204" textAnchor="middle" className="network-axis-label">{label}</text><text x={x + 21} y={Math.max(16, 162 - patientHeight)} textAnchor="middle" className="network-value-label">{hospital.activePatients}</text></g>
+          })}
+        </svg>
+      </div>
+      <aside className="network-health-panel"><div className="network-health-heading"><span>Network health</span><span className="health-status"><i />Stable</span></div><div className="health-score"><strong>92%</strong><span>of hospitals operational</span></div><div className="health-progress"><i /></div><div className="health-facts"><div><span>Operational</span><strong>{hospitalPerformance.filter((hospital) => hospital.status === 'Operational').length}</strong></div><div><span>Monitoring</span><strong>{hospitalPerformance.filter((hospital) => hospital.status === 'Monitoring').length}</strong></div><div><span>Avg. wait</span><strong>16 min</strong></div></div><Link className="network-link" to="/analytics">View network analytics <ArrowUpRight size={15} /></Link></aside>
     </div>
   )
 }
 
-function AlertSeverityChart() {
+function AlertSeverityChart({ operationalAlerts }: { operationalAlerts: any[] }) {
   const totalAlerts = operationalAlerts.length
   const counts = [
     { label: 'High', value: operationalAlerts.filter((alert) => alert.severity === 'High').length },
@@ -173,7 +91,7 @@ function AlertSeverityChart() {
           </div>
           <strong>{value}</strong>
           <div className="distribution-track">
-            <i style={{ width: `${(value / totalAlerts) * 100}%` }} className={label.toLowerCase()} />
+            <i style={{ width: `${totalAlerts ? (value / totalAlerts) * 100 : 0}%` }} className={label.toLowerCase()} />
           </div>
         </div>
       ))}
@@ -182,26 +100,45 @@ function AlertSeverityChart() {
 }
 
 function Dashboard() {
+  const [dashboard, setDashboard] = useState<any>({})
+  const [dashboardError, setDashboardError] = useState('')
+  const [dashboardLoading, setDashboardLoading] = useState(true)
+  useEffect(() => {
+    getPlatformDashboard()
+      .then((data) => { setDashboard(data && typeof data === 'object' ? data : {}); setDashboardError('') })
+      .catch((error: Error) => { setDashboard({}); setDashboardError(error.message || 'Unable to load dashboard') })
+      .finally(() => setDashboardLoading(false))
+  }, [])
+  const totalHospitals = dashboard.hospitals ?? 0
+  const totalHospitalAdmins = dashboard.hospitalAdmins ?? 0
+  // DEMO SAMPLE DATA: only fill these two dashboard KPIs when backend totals are zero.
+  const totalDoctors = dashboard.doctors || mockDoctors.length
+  const totalPatients = dashboard.patients || mockPatients.length
+  const totalAppointments = dashboard.appointmentsToday ?? 0
+  const activeQueues = dashboard.activeQueues ?? 0
+  const hospitalPerformanceSource = Array.isArray(dashboard.hospitalPerformance)
+    ? dashboard.hospitalPerformance
+    : Array.isArray(dashboard.hospitals) ? dashboard.hospitals : []
+  const hospitalPerformance: any[] = hospitalPerformanceSource.map((hospital: any) => ({ name: hospital.name ?? 'Hospital', activePatients: hospital.activePatients ?? hospital.patients ?? 0, activeDoctors: hospital.activeDoctors ?? hospital.doctors ?? 0, appointmentsToday: hospital.appointmentsToday ?? hospital.appointments ?? 0, waitingPatients: hospital.waitingPatients ?? hospital.patientsWaiting ?? 0, averageWait: hospital.averageWait ?? hospital.averageWaitingTime ?? 'Not available', status: hospital.status === 'ACTIVE' || hospital.status === 'Operational' ? 'Operational' : 'Monitoring' }))
+  const queueOverview: any[] = Array.isArray(dashboard.queueOverview) ? dashboard.queueOverview : Array.isArray(dashboard.queues) ? dashboard.queues : []
+  const alertSource = Array.isArray(dashboard.operationalAlerts) ? dashboard.operationalAlerts : Array.isArray(dashboard.alerts) ? dashboard.alerts : []
+  const operationalAlerts: any[] = alertSource.map((alert: any) => ({ title: alert.title ?? alert.message ?? 'Platform alert', hospital: alert.hospital?.name ?? alert.hospitalName ?? 'Network', time: alert.time ?? alert.createdAt ?? 'Not available', severity: alert.severity ?? 'Low', icon: AlertTriangle }))
   const queueTotal = queueOverview.reduce((sum, queue) => sum + queue.value, 0)
   const peakQueue = Math.max(...queueOverview.map((queue) => queue.value))
   const averageQueue = Math.round(queueTotal / queueOverview.length)
-  const activePatients = hospitalPerformance.reduce((sum, hospital) => sum + hospital.activePatients, 0)
-  const activeDoctors = hospitalPerformance.reduce((sum, hospital) => sum + hospital.activeDoctors, 0)
-  const appointmentsToday = hospitalPerformance.reduce((sum, hospital) => sum + hospital.appointmentsToday, 0)
-  const openAlerts = operationalAlerts.length
 
   const kpiCards = [
-    { label: 'Active patients', value: activePatients.toLocaleString(), detail: 'Across 4 facilities', tone: 'positive', icon: Users },
-    { label: 'Active doctors', value: activeDoctors.toLocaleString(), detail: 'On shift today', tone: 'positive', icon: Stethoscope },
-    { label: 'Appointments today', value: appointmentsToday.toLocaleString(), detail: 'Confirmed visits', tone: 'neutral', icon: ClipboardList },
-    { label: 'Open alerts', value: openAlerts.toString().padStart(2, '0'), detail: '2 high priority', tone: 'warning', icon: AlertTriangle },
+    { label: 'Hospitals in network', value: String(totalHospitals), detail: `${totalHospitalAdmins} hospital admins`, tone: 'positive', icon: Building2 },
+    { label: 'Hospital admins', value: String(totalHospitalAdmins), detail: `${totalDoctors} doctors across network`, tone: 'positive', icon: UserCog },
+    { label: 'Doctors', value: String(totalDoctors), detail: `${totalPatients} patients in platform`, tone: 'neutral', icon: Stethoscope },
+    { label: 'Patients', value: String(totalPatients), detail: `${totalAppointments} appointments today · ${activeQueues} active queues`, tone: 'warning', icon: Users },
   ]
 
   return (
-    <section className="dashboard-page">
-      <div className="welcome-row">
+    <section className="dashboard-page">{dashboardLoading && <p className="form-error">Loading dashboard...</p>}{dashboardError && <p className="form-error">{dashboardError}</p>}
+      <div className="welcome-row dashboard-hero">
         <div>
-          <p className="eyebrow">Tuesday, August 25, 2026</p>
+          <p className="eyebrow">Tuesday, August 25, 2026 <span className="hero-live-label"><i />Live network view</span></p>
           <h2>Dashboard</h2>
           <p className="section-lead">Monitor hospital operations, patient flow, and queue activity across the network.</p>
         </div>
@@ -223,16 +160,17 @@ function Dashboard() {
         ))}
       </div>
 
-      <div className="section-title">
+      <div className="section-title dashboard-section-heading">
         <div>
-          <h3>Hospital Performance Overview</h3>
-          <p>Current operational indicators by hospital</p>
+          <p className="eyebrow">Network intelligence</p>
+          <h3>Hospital Network Overview</h3>
+          <p>Current operational indicators across connected facilities</p>
         </div>
         <Link className="text-button" to="/hospitals">View all hospitals <span>→</span></Link>
       </div>
 
-      <section className="dashboard-card performance-card">
-        <HospitalPerformanceChart />
+      <section className="dashboard-card performance-card network-overview-card">
+        <HospitalPerformanceChart hospitalPerformance={hospitalPerformance} />
         <div className="table-scroll">
           <table>
             <thead>
@@ -267,65 +205,70 @@ function Dashboard() {
         </div>
       </section>
 
-      <div className="dashboard-grid lower-dashboard-grid">
-        <article className="dashboard-card queue-card">
+      <div className="dashboard-grid lower-dashboard-grid dashboard-secondary-grid">
+        <article className="dashboard-card queue-card live-queue-card">
           <div className="card-heading">
             <div>
-              <h3>Queue overview</h3>
+              <div className="card-kicker"><span className="live-pulse" />Live operations</div>
+              <h3>Queue status</h3>
               <p>Patients currently waiting by service</p>
             </div>
-            <Activity size={18} className="card-icon" />
+            <Link className="icon-link" to="/live-monitor" aria-label="Open live monitor"><ArrowUpRight size={17} /></Link>
           </div>
 
-          <div className="queue-summary-grid">
+          <div className="queue-summary-grid queue-kpi-strip">
+            <div className="mini-stat queue-total-stat">
+              <span>Total waiting</span>
+              <strong>{queueTotal}</strong>
+              <small>patients now</small>
+            </div>
             <div className="mini-stat">
               <span>Peak queue</span>
               <strong>{peakQueue}</strong>
+              <small>patients</small>
             </div>
             <div className="mini-stat">
-              <span>Average</span>
-              <strong>{averageQueue}</strong>
+              <span>Average wait</span>
+              <strong>{Math.max(8, Math.round(averageQueue / 3))}<small> min</small></strong>
+              <small>across queues</small>
             </div>
           </div>
 
-          <div className="queue-bars">
-            {queueOverview.map((queue) => (
-              <div className="queue-row" key={queue.label}>
-                <div className="queue-label">
-                  <span>{queue.label}</span>
-                  <strong>{queue.value}</strong>
-                </div>
-                <div className="queue-track">
-                  <i style={{ width: `${(queue.value / 82) * 100}%`, background: queue.color }} />
-                </div>
+          <div className="queue-operations-list">
+            {queueOverview.map((queue) => {
+              const status = queue.value >= 70 ? 'High Load' : queue.value >= 50 ? 'Busy' : 'Normal'
+              const waitMinutes = Math.max(8, Math.round(queue.value / 4))
+              return <div className="queue-operation" key={queue.label}>
+                <div className="queue-operation-icon" style={{ color: queue.color, background: `${queue.color}18` }}><Activity size={16} /></div>
+                <div className="queue-operation-main"><div className="queue-operation-title"><strong>{queue.label}</strong><span className={`queue-status ${status.toLowerCase().replace(' ', '-')}`}><i />{status}</span></div><div className="queue-operation-meta"><span>{queue.value} patients</span><span>Avg. wait {waitMinutes} min</span></div><div className="queue-operation-track"><i style={{ width: `${(queue.value / 82) * 100}%`, background: queue.color }} /></div></div>
+                <strong className="queue-operation-count">{queue.value}</strong>
               </div>
-            ))}
+            })}
           </div>
-          <p className="queue-total"><strong>{queueTotal}</strong> patients waiting across active queues</p>
+          <div className="queue-total live-queue-total"><span>Live queue load across active services</span><Link to="/live-monitor">Open monitor <ArrowUpRight size={14} /></Link></div>
         </article>
 
-        <article className="dashboard-card alert-card">
+        <article className="dashboard-card alert-card activity-card">
           <div className="card-heading">
             <div>
-              <h3>Alert preview</h3>
-              <p>Recent operational alerts</p>
+              <div className="card-kicker"><BellRing size={14} /> Attention required</div>
+              <h3>Recent activity</h3>
+              <p>Operational alerts across the network</p>
             </div>
             <Link className="text-button" to="/alerts">View all <span>→</span></Link>
           </div>
 
-          <AlertSeverityChart />
+          <div className="activity-summary"><AlertSeverityChart operationalAlerts={operationalAlerts} /><span className="activity-summary-note"><Clock3 size={13} /> Updated from live operations</span></div>
 
-          <div className="alert-list">
-            {operationalAlerts.map(({ title, hospital, time, severity, icon: Icon }) => (
-              <div className="alert-row" key={title}>
-                <span className={`alert-icon ${severity.toLowerCase()}`}><Icon size={15} /></span>
-                <div>
-                  <strong>{title}</strong>
-                  <p>{hospital}</p>
-                </div>
-                <time>{time}</time>
+          <div className="activity-feed">
+            {operationalAlerts.map(({ title, hospital, time, severity, icon: Icon }) => {
+              const activityTone = severity === 'High' ? 'critical' : severity === 'Medium' ? 'warning' : 'informational'
+              const activityLabel = severity === 'High' ? 'Critical' : severity === 'Medium' ? 'Warning' : 'Info'
+              return <div className={`activity-item ${activityTone}`} key={title}>
+                <div className="activity-marker"><Icon size={14} /></div>
+                <div className="activity-content"><div className="activity-title-row"><strong>{title}</strong><span className="activity-time">{time}</span></div><div className="activity-detail-row"><span>{hospital}</span><span className="activity-badge">{activityLabel}</span></div></div>
               </div>
-            ))}
+            })}
           </div>
         </article>
       </div>

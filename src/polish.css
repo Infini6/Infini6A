@@ -2,6 +2,62 @@
   background: var(--surface);
 }
 
+:root {
+  --space-page: clamp(22px, 3vw, 42px);
+  --surface-raised: #ffffff;
+  --surface-tint: #f7fafc;
+  --blue-soft: #eaf3ff;
+  --teal-soft: #e8f7f4;
+  --warning-soft: #fff5e6;
+  --danger-soft: #fff0ef;
+}
+
+.admin-app,
+.admin-app button,
+.admin-app input,
+.admin-app select,
+.admin-app textarea {
+  letter-spacing: 0;
+}
+
+.admin-app .dashboard-card,
+.admin-app .stat-card,
+.admin-app .placeholder-card,
+.admin-app .settings-card,
+.admin-app .hospital-summary article,
+.admin-app .alert-summary article,
+.admin-app .doctor-summary article,
+.admin-app .patient-summary article,
+.admin-app .analytics-metrics article,
+.admin-app .monitor-stats article,
+.admin-app .audit-summary article {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-app .dashboard-card {
+  border-radius: var(--radius-md);
+}
+
+.admin-app .primary-button,
+.admin-app .outline-button,
+.admin-app .text-button,
+.admin-app .icon-button,
+.admin-app .row-actions button,
+.admin-app .details-button,
+.admin-app .resolve-button {
+  transition: color .16s ease, background-color .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+
+.admin-app .primary-button:hover,
+.admin-app .outline-button:hover,
+.admin-app .row-actions button:hover,
+.admin-app .details-button:hover,
+.admin-app .resolve-button:hover {
+  transform: none;
+}
+
 .sidebar {
   background: #fbfdff;
   border-right-color: var(--line);

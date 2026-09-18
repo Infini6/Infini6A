@@ -82,9 +82,10 @@ export function AdminLayout() {
         <header className="topbar">
           <div className="topbar-title">
             <button className="icon-button mobile-menu" type="button" onClick={() => setIsMobileOpen(true)} aria-label="Open navigation"><Menu size={20} /></button>
-            <div><p className="eyebrow">Operations center</p><h1>{currentPage?.label ?? 'Platform Admin'}</h1></div>
+            <div className="topbar-heading"><p className="eyebrow">Operations center</p><h1>{currentPage?.label ?? 'Platform Admin'}</h1></div>
           </div>
           <div className="topbar-actions">
+            <span className="topbar-scope">Network overview</span>
             <span className="system-status"><span className="status-dot" />All systems operational</span>
             <ProfileMenu />
           </div>

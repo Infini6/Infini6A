@@ -1,17 +1,27 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2, Clock3, Eye, Search, UserRound, Users, X } from 'lucide-react'
-import { mockPatients, type JourneyStatus, type PatientOperationalRecord } from '../data/patientsData'
-import { mockHospitals } from '../data/hospitalsData'
+import { mockPatients as demoPatients, type JourneyStatus, type PatientOperationalRecord } from '../data/patientsData'
+import { mockHospitals as demoHospitals } from '../data/hospitalsData'
+import { getHospitals, getPatients } from '../services/api'
 import './PatientsPage.css'
+import '../components/PortalPrimitives'
 
 const journeyFilters: Array<'All' | JourneyStatus> = ['All', 'Waiting', 'In Progress', 'Completed']
 
 export function PatientsPage() {
+  const [patients, setPatients] = useState<PatientOperationalRecord[]>([])
+  const [hospitals, setHospitals] = useState<Array<{ id: string; name: string }>>([])
+  const [error, setError] = useState('')
   const [query, setQuery] = useState('')
   const [hospital, setHospital] = useState('All hospitals')
   const [journeyStatus, setJourneyStatus] = useState<'All' | JourneyStatus>('All')
   const [selectedPatient, setSelectedPatient] = useState<PatientOperationalRecord | null>(null)
-  const filteredPatients = useMemo(() => mockPatients.filter((patient) => `${patient.id} ${patient.displayName}`.toLowerCase().includes(query.toLowerCase()) && (hospital === 'All hospitals' || patient.hospital === hospital) && (journeyStatus === 'All' || patient.journeyStatus === journeyStatus)), [query, hospital, journeyStatus])
+  const mockPatients = patients
+  const mockHospitals = hospitals
+  void error
+  if (error) return <section className="patients-page"><p className="form-error">{error}</p></section>
+  useEffect(() => { async function load() { try { const [patientResponse, hospitalResponse] = await Promise.all([getPatients(), getHospitals()]); const hospitalRecords = Array.isArray(hospitalResponse) ? hospitalResponse : hospitalResponse?.items ?? []; setHospitals(hospitalRecords.length ? hospitalRecords.map((item: any) => ({ id: String(item.id), name: item.name })) : demoHospitals.map(({ id, name }) => ({ id, name }))); const records = Array.isArray(patientResponse) ? patientResponse : patientResponse?.items ?? patientResponse?.patients ?? []; setPatients(records.length ? records.map((patient: any) => ({ id: String(patient.id ?? patient.patientId), displayName: patient.displayName ?? patient.name ?? 'Not available', hospital: patient.hospital?.name ?? patient.hospitalName ?? '', currentDepartment: patient.currentDepartment ?? patient.department?.name ?? patient.department ?? 'Not available', journeyStatus: patient.journeyStatus ?? patient.status ?? 'Waiting', queueStatus: patient.queueStatus ?? 'Not available', appointmentTime: patient.appointmentTime ?? 'Not available', queuePosition: patient.queuePosition ?? 0, estimatedWaitingTime: patient.estimatedWaitingTime ?? 'Not available' })) : demoPatients) } catch (err: any) { setError(err.message || 'Unable to load patients') } } load() }, [])
+  const filteredPatients = useMemo(() => mockPatients.filter((patient) => `${patient.id} ${patient.displayName}`.toLowerCase().includes(query.toLowerCase()) && (hospital === 'All hospitals' || patient.hospital === hospital) && (journeyStatus === 'All' || patient.journeyStatus === journeyStatus)), [mockPatients, query, hospital, journeyStatus])
   const activePatients = mockPatients.filter((patient) => patient.journeyStatus !== 'Completed').length
   const waitingPatients = mockPatients.filter((patient) => patient.journeyStatus === 'Waiting').length
   const completedPatients = mockPatients.filter((patient) => patient.journeyStatus === 'Completed').length

@@ -1,40 +1,80 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Check, Edit3, Eye, Mail, Phone, Plus, Search, UserRound, X } from 'lucide-react'
-import { emptyHospitalAdminForm, mockHospitalAdmins, type HospitalAdmin, type HospitalAdminFormValues, type HospitalAdminStatus } from '../data/hospitalAdminsData'
-import { mockHospitals } from '../data/hospitalsData'
+import { emptyHospitalAdminForm, type HospitalAdmin, type HospitalAdminFormValues, type HospitalAdminStatus } from '../data/hospitalAdminsData'
+import { createHospitalAdmin, getHospitalAdmins, getHospitals, updateHospitalAdmin } from '../services/api'
 import './HospitalAdminsPage.css'
+import '../components/PortalPrimitives'
 
-type ModalState = { mode: 'view' | 'edit' | 'status'; admin: HospitalAdmin } | { mode: 'add' } | null
+type AdminRecord = HospitalAdmin & { hospitalId: string }
+type HospitalOption = { id: string; name: string }
+type AdminFormValues = HospitalAdminFormValues & { password: string }
+type ModalState = { mode: 'view' | 'edit' | 'status'; admin: AdminRecord } | { mode: 'add' } | null
 
-function AdminForm({ initialValues, onCancel, onSave }: { initialValues: HospitalAdminFormValues; onCancel: () => void; onSave: (values: HospitalAdminFormValues) => void }) {
-  const [values, setValues] = useState(initialValues)
-  const [error, setError] = useState('')
-  const update = (field: keyof HospitalAdminFormValues, value: string) => setValues((current) => ({ ...current, [field]: value }))
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!values.fullName.trim() || !values.email.trim() || !values.phone.trim() || !values.hospital || !values.role.trim()) { setError('Complete all required fields before saving.'); return }
-    setError(''); onSave(values)
-  }
-  return <form className="admin-form" onSubmit={submit}><div className="form-grid"><label>Full name *<input value={values.fullName} onChange={(event) => update('fullName', event.target.value)} placeholder="e.g. Alex Morgan" /></label><label>Email *<input type="email" value={values.email} onChange={(event) => update('email', event.target.value)} placeholder="admin@hospital.example" /></label><label>Phone *<input value={values.phone} onChange={(event) => update('phone', event.target.value)} placeholder="+1 (555) 010-0000" /></label><label>Assigned hospital *<select value={values.hospital} onChange={(event) => update('hospital', event.target.value)}><option value="">Select hospital</option>{mockHospitals.map((hospital) => <option key={hospital.id}>{hospital.name}</option>)}</select></label><label>Role *<input value={values.role} onChange={(event) => update('role', event.target.value)} placeholder="e.g. Hospital Administrator" /></label>{initialValues.status && <label>Status<select value={values.status} onChange={(event) => update('status', event.target.value as HospitalAdminStatus)}><option>Active</option><option>Inactive</option></select></label>}</div>{error && <p className="form-error">{error}</p>}<div className="modal-actions"><button className="outline-button" type="button" onClick={onCancel}>Cancel</button><button className="primary-button" type="submit"><Check size={15} /> Save administrator</button></div></form>
+function recordsFromResponse(value: any): any[] {
+  if (Array.isArray(value)) return value
+  return value?.items ?? value?.results ?? value?.admins ?? []
 }
 
-function AdminDetails({ admin, onClose }: { admin: HospitalAdmin; onClose: () => void }) {
+function formatAdmin(value: any): AdminRecord {
+  const hospital = typeof value.hospital === 'object' ? value.hospital : null
+  const fullName = value.fullName ?? value.name ?? [value.firstName, value.lastName].filter(Boolean).join(' ')
+  return {
+    id: String(value.id), fullName: fullName || '', email: value.email ?? '',
+    phone: value.phone ?? value.contactNumber ?? '',
+    hospital: hospital?.name ?? value.hospitalName ?? (typeof value.hospital === 'string' ? value.hospital : ''),
+    hospitalId: String(value.hospitalId ?? hospital?.id ?? ''), role: value.role ?? value.jobTitle ?? 'Hospital Administrator',
+    status: String(value.status ?? '').toUpperCase() === 'INACTIVE' ? 'Inactive' : 'Active',
+    lastActive: value.lastActive ?? value.lastActiveAt ?? value.lastLoginAt ?? 'Not available',
+  }
+}
+
+function AdminForm({ initialValues, hospitals, isCreating, onCancel, onSave }: { initialValues: HospitalAdminFormValues; hospitals: HospitalOption[]; isCreating: boolean; onCancel: () => void; onSave: (values: AdminFormValues) => Promise<void> }) {
+  const [values, setValues] = useState<AdminFormValues>({ ...initialValues, password: '' })
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const update = (field: keyof AdminFormValues, value: string) => setValues((current) => ({ ...current, [field]: value }))
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!values.fullName.trim() || !values.email.trim() || !values.hospital || (isCreating && !values.password.trim())) { setError('Complete all required fields before saving, including a password.'); return }
+    try { setSaving(true); setError(''); await onSave(values) } catch (err: any) { setError(err.message || 'Unable to save administrator') } finally { setSaving(false) }
+  }
+  return <form className="admin-form" onSubmit={submit}><div className="form-grid"><label>Full name *<input value={values.fullName} onChange={(event) => update('fullName', event.target.value)} placeholder="e.g. Alex Morgan" /></label><label>Email *<input type="email" value={values.email} onChange={(event) => update('email', event.target.value)} placeholder="admin@hospital.example" /></label>{isCreating && <label>Password *<input type="password" value={values.password} onChange={(event) => update('password', event.target.value)} placeholder="SecurePassword123!" autoComplete="new-password" /></label>}<label>Phone<input value={values.phone} onChange={(event) => update('phone', event.target.value)} placeholder="+1 (555) 010-0000" /></label><label>Assigned hospital *<select value={values.hospital} onChange={(event) => update('hospital', event.target.value)}><option value="">Select hospital</option>{hospitals.map((hospital) => <option key={hospital.id}>{hospital.name}</option>)}</select></label><label>Role *<input value={values.role} onChange={(event) => update('role', event.target.value)} placeholder="e.g. Hospital Administrator" /></label>{initialValues.status && <label>Status<select value={values.status} onChange={(event) => update('status', event.target.value as HospitalAdminStatus)}><option>Active</option><option>Inactive</option></select></label>}</div>{error && <p className="form-error">{error}</p>}<div className="modal-actions"><button className="outline-button" type="button" onClick={onCancel}>Cancel</button><button className="primary-button" type="submit" disabled={saving}><Check size={15} /> {saving ? 'Saving...' : 'Save administrator'}</button></div></form>
+}
+
+function AdminDetails({ admin, onClose }: { admin: AdminRecord; onClose: () => void }) {
   return <div className="admin-details"><div className="details-intro"><div className="hospital-avatar"><UserRound size={21} /></div><div><h3>{admin.fullName}</h3><p>{admin.role} <span className={`status-badge ${admin.status.toLowerCase()}`}>{admin.status}</span></p></div></div><div className="admin-contact-list"><p><Mail size={15} />{admin.email}</p><p><Phone size={15} />{admin.phone}</p></div><div className="admin-detail-list"><div><span>Assigned hospital</span><strong>{admin.hospital}</strong></div><div><span>Last active</span><strong>{admin.lastActive}</strong></div></div><div className="modal-actions"><button className="outline-button" type="button" onClick={onClose}>Close</button></div></div>
 }
 
 export function HospitalAdminsPage() {
-  const [admins, setAdmins] = useState(mockHospitalAdmins)
+  const [admins, setAdmins] = useState<AdminRecord[]>([])
+  const [hospitals, setHospitals] = useState<HospitalOption[]>([])
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<'All' | HospitalAdminStatus>('All')
   const [hospitalFilter, setHospitalFilter] = useState('All hospitals')
   const [modal, setModal] = useState<ModalState>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  async function loadData() {
+    try {
+      setLoading(true); setError('')
+      const [adminResponse, hospitalResponse] = await Promise.all([getHospitalAdmins(), getHospitals()])
+      setAdmins(recordsFromResponse(adminResponse).map(formatAdmin))
+      setHospitals(recordsFromResponse(hospitalResponse).map((hospital) => ({ id: String(hospital.id), name: hospital.name })))
+    } catch (err: any) { setError(err.message || 'Unable to load hospital administrators') } finally { setLoading(false) }
+  }
+  useEffect(() => { loadData() }, [])
+
   const filteredAdmins = useMemo(() => admins.filter((admin) => (statusFilter === 'All' || admin.status === statusFilter) && (hospitalFilter === 'All hospitals' || admin.hospital === hospitalFilter) && `${admin.fullName} ${admin.email} ${admin.hospital}`.toLowerCase().includes(query.toLowerCase())), [admins, query, statusFilter, hospitalFilter])
   const activeCount = admins.filter((admin) => admin.status === 'Active').length
-  function saveAdmin(values: HospitalAdminFormValues) {
-    if (modal?.mode === 'edit') setAdmins((current) => current.map((admin) => admin.id === modal.admin.id ? { ...admin, ...values } : admin))
-    else setAdmins((current) => [...current, { ...values, id: `admin-${Date.now()}`, lastActive: 'Not yet active' }])
-    setModal(null)
+  async function saveAdmin(values: AdminFormValues) {
+    const selectedHospital = hospitals.find((hospital) => hospital.name === values.hospital)
+    if (!selectedHospital) throw new Error('Select a valid hospital')
+    if (modal?.mode === 'edit') await updateHospitalAdmin(modal.admin.id, { status: values.status === 'Active' ? 'ACTIVE' : 'INACTIVE' })
+    else await createHospitalAdmin({ email: values.email, password: values.password, fullName: values.fullName, hospitalId: selectedHospital.id, phone: values.phone })
+    setModal(null); await loadData()
   }
-  function changeStatus(admin: HospitalAdmin) { setAdmins((current) => current.map((item) => item.id === admin.id ? { ...item, status: item.status === 'Active' ? 'Inactive' : 'Active' } : item)); setModal(null) }
-  return <section className="admins-page"><div className="page-heading admins-heading"><div><p className="eyebrow">Access directory</p><h2>Hospital Admins</h2><p>Manage administrator access across connected hospitals.</p></div><button className="primary-button" type="button" onClick={() => setModal({ mode: 'add' })}><Plus size={16} /> Add hospital admin</button></div><div className="hospital-summary admin-summary"><article><span>Total hospital admins</span><strong>{admins.length}</strong></article><article><span>Active admins</span><strong className="summary-active">{activeCount}</strong></article><article><span>Inactive admins</span><strong className="summary-inactive">{admins.length - activeCount}</strong></article></div><div className="admin-toolbar"><div className="search-box"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by admin name, email, or hospital" aria-label="Search hospital admins" /></div><select className="hospital-filter" value={hospitalFilter} onChange={(event) => setHospitalFilter(event.target.value)} aria-label="Filter by hospital"><option>All hospitals</option>{mockHospitals.map((hospital) => <option key={hospital.id}>{hospital.name}</option>)}</select><div className="filter-group" aria-label="Filter by status">{(['All', 'Active', 'Inactive'] as const).map((status) => <button className={statusFilter === status ? 'selected' : ''} key={status} type="button" onClick={() => setStatusFilter(status)}>{status}</button>)}</div></div><section className="dashboard-card hospital-table-card"><div className="table-scroll"><table className="admin-table"><thead><tr><th>Admin name</th><th>Email</th><th>Phone</th><th>Assigned hospital</th><th>Role</th><th>Status</th><th>Last active</th><th>Actions</th></tr></thead><tbody>{filteredAdmins.map((admin) => <tr key={admin.id}><td><strong>{admin.fullName}</strong></td><td>{admin.email}</td><td>{admin.phone}</td><td>{admin.hospital}</td><td>{admin.role}</td><td><span className={`status-badge ${admin.status.toLowerCase()}`}><span />{admin.status}</span></td><td>{admin.lastActive}</td><td><div className="row-actions"><button type="button" title="View administrator" onClick={() => setModal({ mode: 'view', admin })}><Eye size={15} /></button><button type="button" title="Edit administrator" onClick={() => setModal({ mode: 'edit', admin })}><Edit3 size={15} /></button><button type="button" className="status-action" title={admin.status === 'Active' ? 'Deactivate administrator' : 'Activate administrator'} onClick={() => setModal({ mode: 'status', admin })}>{admin.status === 'Active' ? <X size={15} /> : <Check size={15} />}</button></div></td></tr>)}</tbody></table></div>{filteredAdmins.length === 0 && <div className="empty-state"><Search size={20} /><strong>No hospital admins found</strong><p>Try another search, hospital, or status filter.</p></div>}</section><p className="prototype-note">Showing {filteredAdmins.length} of {admins.length} hospital administrators</p>{modal && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}><section className="hospital-modal" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title"><div className="modal-header"><div><p className="eyebrow">{modal.mode === 'view' ? 'Administrator details' : modal.mode === 'status' ? 'Status change' : modal.mode === 'add' ? 'New administrator' : 'Edit administrator'}</p><h2 id="admin-modal-title">{modal.mode === 'add' ? 'Add hospital admin' : modal.mode === 'status' ? `${modal.admin.status === 'Active' ? 'Deactivate' : 'Activate'} administrator?` : modal.mode === 'view' ? modal.admin.fullName : 'Edit administrator information'}</h2></div><button className="icon-button" type="button" onClick={() => setModal(null)} aria-label="Close dialog"><X size={17} /></button></div>{modal.mode === 'view' && <AdminDetails admin={modal.admin} onClose={() => setModal(null)} />}{(modal.mode === 'add' || modal.mode === 'edit') && <AdminForm initialValues={modal.mode === 'edit' ? modal.admin : emptyHospitalAdminForm} onCancel={() => setModal(null)} onSave={saveAdmin} />}{modal.mode === 'status' && <div className="status-confirm"><p>This will change <strong>{modal.admin.fullName}</strong> to <strong>{modal.admin.status === 'Active' ? 'Inactive' : 'Active'}</strong>. The update is local to this session.</p><div className="modal-actions"><button className="outline-button" type="button" onClick={() => setModal(null)}>Cancel</button><button className="primary-button" type="button" onClick={() => changeStatus(modal.admin)}>Confirm change</button></div></div>}</section></div>}</section>
+  async function changeStatus(admin: AdminRecord) { try { setError(''); await updateHospitalAdmin(admin.id, { status: admin.status === 'Active' ? 'INACTIVE' : 'ACTIVE' }); setModal(null); await loadData() } catch (err: any) { setError(err.message || 'Unable to update administrator status') } }
+
+  return <section className="admins-page"><div className="page-heading admins-heading"><div><p className="eyebrow">Access directory</p><h2>Hospital Admins</h2><p>Manage administrator access across connected hospitals.</p></div><button className="primary-button" type="button" onClick={() => setModal({ mode: 'add' })}><Plus size={16} /> Add hospital admin</button></div>{error && <p className="form-error">{error}</p>}<div className="hospital-summary admin-summary"><article><span>Total hospital admins</span><strong>{admins.length}</strong></article><article><span>Active admins</span><strong className="summary-active">{activeCount}</strong></article><article><span>Inactive admins</span><strong className="summary-inactive">{admins.length - activeCount}</strong></article></div><div className="admin-toolbar"><div className="search-box"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by admin name, email, or hospital" aria-label="Search hospital admins" /></div><select className="hospital-filter" value={hospitalFilter} onChange={(event) => setHospitalFilter(event.target.value)} aria-label="Filter by hospital"><option>All hospitals</option>{hospitals.map((hospital) => <option key={hospital.id}>{hospital.name}</option>)}</select><div className="filter-group" aria-label="Filter by status">{(['All', 'Active', 'Inactive'] as const).map((status) => <button className={statusFilter === status ? 'selected' : ''} key={status} type="button" onClick={() => setStatusFilter(status)}>{status}</button>)}</div></div><section className="dashboard-card hospital-table-card"><div className="table-scroll"><table className="admin-table"><thead><tr><th>Admin name</th><th>Email</th><th>Phone</th><th>Assigned hospital</th><th>Role</th><th>Status</th><th>Last active</th><th>Actions</th></tr></thead><tbody>{filteredAdmins.map((admin) => <tr key={admin.id}><td><strong>{admin.fullName}</strong></td><td>{admin.email}</td><td>{admin.phone}</td><td>{admin.hospital}</td><td>{admin.role}</td><td><span className={`status-badge ${admin.status.toLowerCase()}`}><span />{admin.status}</span></td><td>{admin.lastActive}</td><td><div className="row-actions"><button type="button" title="View administrator" onClick={() => setModal({ mode: 'view', admin })}><Eye size={15} /></button><button type="button" title="Edit administrator" onClick={() => setModal({ mode: 'edit', admin })}><Edit3 size={15} /></button><button type="button" className="status-action" title={admin.status === 'Active' ? 'Deactivate administrator' : 'Activate administrator'} onClick={() => setModal({ mode: 'status', admin })}>{admin.status === 'Active' ? <X size={15} /> : <Check size={15} />}</button></div></td></tr>)}</tbody></table></div>{loading && <div className="empty-state"><strong>Loading hospital administrators...</strong></div>}{!loading && filteredAdmins.length === 0 && <div className="empty-state"><Search size={20} /><strong>No hospital admins found</strong><p>Try another search, hospital, or status filter.</p></div>}</section><p className="prototype-note">Showing {filteredAdmins.length} of {admins.length} hospital administrators</p>{modal && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}><section className="hospital-modal" role="dialog" aria-modal="true" aria-labelledby="admin-modal-title"><div className="modal-header"><div><p className="eyebrow">{modal.mode === 'view' ? 'Administrator details' : modal.mode === 'status' ? 'Status change' : modal.mode === 'add' ? 'New administrator' : 'Edit administrator'}</p><h2 id="admin-modal-title">{modal.mode === 'add' ? 'Add hospital admin' : modal.mode === 'status' ? `${modal.admin.status === 'Active' ? 'Deactivate' : 'Activate'} administrator?` : modal.mode === 'view' ? modal.admin.fullName : 'Edit administrator information'}</h2></div><button className="icon-button" type="button" onClick={() => setModal(null)} aria-label="Close dialog"><X size={17} /></button></div>{modal.mode === 'view' && <AdminDetails admin={modal.admin} onClose={() => setModal(null)} />}{(modal.mode === 'add' || modal.mode === 'edit') && <AdminForm hospitals={hospitals} isCreating={modal.mode === 'add'} initialValues={modal.mode === 'edit' ? modal.admin : emptyHospitalAdminForm} onCancel={() => setModal(null)} onSave={saveAdmin} />}{modal.mode === 'status' && <div className="status-confirm"><p>This will change <strong>{modal.admin.fullName}</strong> to <strong>{modal.admin.status === 'Active' ? 'Inactive' : 'Active'}</strong>.</p><div className="modal-actions"><button className="outline-button" type="button" onClick={() => setModal(null)}>Cancel</button><button className="primary-button" type="button" onClick={() => changeStatus(modal.admin)}>Confirm change</button></div></div>}</section></div>}</section>
 }
